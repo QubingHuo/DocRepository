@@ -5,4 +5,5 @@ hahahhahaha
 yes
 no
 what is it
-is a giti 
+is a git
+local
