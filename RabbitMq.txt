@@ -10,3 +10,30 @@ virtual hosts管理
 	从name点进去，设置用户权限
 
 amqp协议：服务器和RabbitMq通信的协议
+
+tips:
+	1.不可以修改已声明好的队列属性（例如durable），尽管代码编译正确，但是运行会报错
+		channel.queueDeclare(QUEUE_NAME,false,false,false,null);//第二个参数是durable
+
+消息应答与持久化
+	1.boolean autoAck = true;
+          channel.basicConsume(QUEUE_NAME, autoAck, consumer);
+	一旦RabbitMq将消息分发给消费者，就会从内存中删除
+	这种情况下，正在执行任务的消费者如果挂了，会丢失正在处理的这条消息
+
+	boolean autoAck = false;
+	设为手动模式：如果处理消息的消费者挂掉，队列会将消息发给其它消费者
+	RabbitMq支持消息应答：消费者告诉RabbitMq，这条消息已处理完成，然后RabbitMq会从内存中删除这条消息
+
+publish/subscribe
+	解读：
+		1.一个生产者，多个消费者
+		2.每一个消费者都有自己的队列
+		3.生产者没有把消息直接发送到队列，而是发送到了交换机（转发器|exchange）
+		4.每个队列都要绑定到交换机上
+		5.生产者发送的消息，经过交换机到达队列，就能实现一个消息被多个消费者消费的场景
+
+	操作：
+		1.在RabbitMq中，交换机没有存储功能，只有队列有存储能力
+		2.将队列绑定到交换机
+			channel.queueBind(QUEUE_NAME, EXCHANGE_NAME, "");
