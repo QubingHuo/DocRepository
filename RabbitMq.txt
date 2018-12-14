@@ -15,7 +15,7 @@ tips:
 	1.不可以修改已声明好的队列属性（例如durable），尽管代码编译正确，但是运行会报错
 		channel.queueDeclare(QUEUE_NAME,false,false,false,null);//第二个参数是durable
 
-消息应答与持久化
+消息应答与持久化（消费者）
 	1.boolean autoAck = true;
           channel.basicConsume(QUEUE_NAME, autoAck, consumer);
 	一旦RabbitMq将消息分发给消费者，就会从内存中删除
@@ -45,3 +45,42 @@ Exchanges(交换机)
 		1.匿名转发：""
 		2.不处理路由键：fanout
 		3.处理路由键：direct
+
+topic:
+	将路由键和某模式匹配
+		# 匹配一个或多个
+		* 匹配一个
+
+
+消息确认机制（生产者）
+	1.在RabbitMq中，我们可以通过持久化数据，解决RabbitMq服务器异常导致的数据丢失问题。
+	
+	2.问题：生产者发送消息之后，如何确定消息是否已经到达RabbitMq？默认是不知道的
+	  解决方式：1.AMQP实现了事务机制
+			txSelect：用户将当前的channel设置成transaction模式
+			txCommit：用于提交事务
+			txRollback：回滚事务
+		      这种模式，会降低吞吐量，因为网络请求太多了
+		    2.Confirm模式
+			1.生产者confirm模式的实现原理：
+				生产者将channel设置成confirm模式，一旦channel进入confirm模式，所有在该channel上面发布的消息都会被指派一个唯一的ID（从1开始），一旦消息被投递到所有匹配的
+				队列之后，broker就会发送一个确认给生产者（包含唯一的ID），这就使得生产者知道消息已经正确到达目的队列了。如果消息和队列是可持久化的，那么确认消息会将消息
+				写入磁盘后发出，broker回传给生产者的确认消息中delever-tag域包含了确认消息的序列号，此外broker也可以设置basic.ack的multiple域，表示到这个序列号之前的所有
+				消息都已经得到了处理
+	
+			2.最大的好处：异步处理
+			3.开启方式：channel.confirmSelect();
+			4.编程模式：
+				1.普通模式   发一条 waitForConfirms()
+				2.批量模式   发一批 waitForConfirms()
+				3.异步模式:
+					Channel对象提供的ConfirmListener()毁掉方法只包含deliveryTag（当前Channel发出的消息序号），我们需要自己为每一个Channel维护一个unconfirm的消息序号集合，每publish一条数据，
+					集合中元素加1，每会掉一次handleAck方法，unconfirm集合删掉相应的一条multiple-false（或多条multiple-true）记录，从程序运行效率上看，这个unconfirm集合最好采用有序集合SortedSet存储结构
+
+
+	tips:
+		1.不能将已存在的事务的queue设置成confirm模式
+
+
+问题：
+1.topic的#和*区别
