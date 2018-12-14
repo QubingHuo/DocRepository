@@ -37,3 +37,11 @@ publish/subscribe
 		1.在RabbitMq中，交换机没有存储功能，只有队列有存储能力
 		2.将队列绑定到交换机
 			channel.queueBind(QUEUE_NAME, EXCHANGE_NAME, "");
+
+
+Exchanges(交换机)
+	作用：接收生产者
+	类型：
+		1.匿名转发：""
+		2.不处理路由键：fanout
+		3.处理路由键：direct
